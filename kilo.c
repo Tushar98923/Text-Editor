@@ -14,20 +14,30 @@ void enableRawMode() {
   atexit(disableRawMode);
 
   struct termios raw = orig_termios;
-  raw.c_iflag &= ~(IXON | ICRNL);
+  raw.c_iflag &= ~(IXON | ICRNL | BRKINT | INPCK | ISTRIP);
+  raw.c_oflag &= ~(OPOST);
+  raw.c_cflag |= (CS8);
   raw.c_lflag &= ~(ECHO | ICANON | ISIG | IEXTEN);
+  raw.c_cc[VMIN] = 0;
+  raw.c_cc[VTIME] = 1;
   tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw);
 }
 
 
 int main(){
 	enableRawMode();
-	char c;
-	while (read(STDIN_FILENO, &c ,1) == 1 && c != 'q'){
-		if(iscntrl(c)){
-			printf("%d\n", c);
-		}else{
-			printf("%d('%c')\n",c,c);
+	while(1){
+		char c = '\0';
+		read(STDIN_FILENO,&c,1);
+		while (read(STDIN_FILENO, &c ,1) == 1 && c != 'q'){
+			if(iscntrl(c)){
+				printf("%d\r\n", c);
+			}else{
+				printf("%d('%c')\r\n",c,c);
+			}
+		}
+		if(c == 'q'){
+			break;
 		}
 	}
 	return 0;
